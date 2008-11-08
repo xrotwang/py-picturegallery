@@ -1,28 +1,22 @@
 <?xml version = "1.0" encoding = "UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-  <xsl:import href="lib.xsl"/>
-  <xsl:import href="lang.xsl"/>
-
+  <xsl:import href="../lib.xsl"/>
+  <xsl:import href="../lang.xsl"/>
 
   <xsl:param name="title" select="//photo/title/text()"/>
-  <xsl:param name="sidebar" select="false()"/>
 
-
-  <xsl:template name="head">
+  <xsl:template name="head_content">
     <script src="../../js/photonotes.js" type="text/javascript"/>
     <link href="../../css/photonotes.css" rel="stylesheet" type="text/css" />
   </xsl:template>
 
-  <xsl:template name="body">
+  <xsl:template name="main_content">
     <xsl:apply-templates/>
   </xsl:template>
-
-  <xsl:attribute-set name="body">
-    <xsl:attribute name="onunload">GUnload();</xsl:attribute>
-  </xsl:attribute-set>
   
   <xsl:template match="photo">
-    <h2><xsl:value-of select="title/text()"/></h2>
+    <h2><a href="http://flickr.com/photos/{$sets_data/@user_id}/{@id}/"
+	   title="go to photo page on flickr"><xsl:value-of select="title/text()"/></a></h2>
     <div class="fn-container" id="PhotoContainer">
       <img src="Large.jpg"/>
     </div>
@@ -76,8 +70,7 @@ notes.AddNote(note);
     <h3><xsl:value-of select="$tags"/>:</h3>
     <ul>
       <xsl:for-each select="//tag">
-	<li><a href="../../sets/v_tag_{text()}/index.html"
-	       title="other photos tagged with {@raw}"><xsl:value-of select="@raw"/></a></li>
+	<li><xsl:value-of select="@raw"/></li>
       </xsl:for-each>
     </ul>
     <h3><xsl:value-of select="$image_sizes"/>:</h3>

@@ -37,8 +37,8 @@ import flickr
 import path
 
 # import the db schema
-from db import METADATA, get_session, Photo, Set, Tag, Note
-from util import existing_dir, write_tree, create_element
+from lib.db import METADATA, get_session, Photo, Set, Tag, Note
+from lib.util import existing_dir, write_tree, create_element
 
 
 def backup(cfg, options):

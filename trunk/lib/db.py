@@ -50,7 +50,7 @@ notes_t = Table('notes', METADATA,
                 Column('height', Integer()),
                 )
 
-class Resource(object): pass
+class Resource(object):
     def dir(self):
         return path.path(self.__class__.__name__.lower()+'s').joinpath(self.id)
 

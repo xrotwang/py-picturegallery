@@ -38,25 +38,19 @@ import path
 
 # import the db schema
 from db import METADATA, get_session, Photo, Set, Tag, Note
-
-
-def write_tree(root, path, verbose=False):
-    tree = et.ElementTree(root)
-    tree.write(path, 'utf-8')
-    if verbose: print path, 'written'    
+from util import existing_dir, write_tree, create_element
 
 
 def backup(cfg, options):
     """
     backup all photos to disk
     """
-    myself = flickr.User( cfg.get('flickr', 'user_id'))
+    myself = flickr.User(cfg.get('flickr', 'user_id'))
 
     photo_ids = []
     set_ids = []
 
-    base_dir = path.path(cfg.get('system', 'base_dir'))
-    if not base_dir.exists(): base_dir.makedirs()
+    base_dir = existing_dir(cfg.get('system', 'base_dir'))
 
     print "retrieving data from flickr ..."
 
@@ -72,19 +66,15 @@ def backup(cfg, options):
 
         if options.verbose: print "set =>", set.title, set.id
 
-        set_dir = base_dir.joinpath('sets', str(set.id))
-        if not set_dir.exists(): set_dir.makedirs()
+        set_dir = existing_dir(base_dir.joinpath('sets', str(set.id)))
 
         set_md_set = et.Element('set', {'id': set.id})
         for attr in ['title', 'description']:
-            e = et.Element(attr)
-            e.text = getattr(set, attr)
-            set_md_set.append(e)
+            set_md_set.append(create_element(attr, None, getattr(set, attr)))
 
         for id, photo in set.getPhotos():
             if not options.sets_only:
-                photo_dir = base_dir.joinpath('photos', str(photo.id))
-                if not photo_dir.exists(): photo_dir.makedirs()
+                photo_dir = existing_dir(base_dir.joinpath('photos', str(photo.id)))
 
                 if options.verbose: print "photo =>", photo.title, photo.id
                 
@@ -122,7 +112,8 @@ def backup(cfg, options):
                         sizes_element.append(et.Element('size', dict(name=size, url=source)))
 
                 photo_element.append(sizes_element)                
-                write_tree(md, photo_dir.joinpath('md.xml'), options.verbose)
+                p = write_tree(md, photo_dir.joinpath('md.xml')) 
+                if options.verbose: print p, "written"
                 if photo.id not in photo_ids: photo_ids.append(photo.id)
 
             set_md_set.append(et.Element('photo', {'ref': photo.id}))
@@ -130,7 +121,8 @@ def backup(cfg, options):
         set_md_root = et.Element('rsp', {'stat':'ok'})
         set_md_root.append(set_md_set)
 
-        write_tree(set_md_root, set_dir.joinpath('md.xml'), options.verbose)
+        p = write_tree(set_md_root, set_dir.joinpath('md.xml'))
+        if options.verbose: print p, "written"
         set_ids.append(set.id)
 
     print "... finished: backed up %s photos in %s sets.\n" % (len(photo_ids), len(set_ids))

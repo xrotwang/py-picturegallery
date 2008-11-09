@@ -32,9 +32,9 @@ from optparse import OptionParser
 from xml.etree import ElementTree as et
 from ConfigParser import SafeConfigParser
 
-# third party modules:
-import flickr
-import path
+
+from lib import flickr
+from lib import path
 
 # import the db schema
 from lib.db import METADATA, get_session, Photo, Set, Tag, Note
@@ -140,14 +140,15 @@ def recreate_db(cfg, options):
 
     base_dir = path.path(cfg.get('system', 'base_dir'))
     sqlite_db = path.path(cfg.get('system', 'sqlite_db'))
-    sqlite_db.copy(sqlite_db+'.bak')
+    if sqlite_db.exists(): 
+        sqlite_db.copy(sqlite_db+'.bak')
 
     session = get_session(sqlite_db.abspath())
     
     METADATA.drop_all()
-    session.flush()
+    #session.flush()
     METADATA.create_all()
-    session.flush()
+    #session.flush()
 
     photos = {}
     tags = {}
@@ -157,9 +158,12 @@ def recreate_db(cfg, options):
         rscsDir = base_dir.joinpath(rsc_type+'s')
 
         for rsc in rscsDir.listdir():
+            if not re.match('[0-9]+$', rsc.splitpath()[1]): 
+                print rsc
+                continue
             rscMd = rscsDir.joinpath(rsc, 'md.xml')
             if not rscMd.exists():
-                if re.match('[0-9]+$', rsc): raise ValueError('no md for %s %s' % (rsc_type, rsc))
+                if re.match('[0-9]+$', rsc.splitpath()[1]): raise ValueError('no md for %s %s' % (rsc_type, rsc))
             else:
                 try:
                     element = et.parse(rscMd).find(rsc_type)
@@ -217,10 +221,14 @@ def recreate_db(cfg, options):
 
                 elif rsc_type == 'set':
                     session.save(new)
-                    session.flush()
+                    try:
+                        #session.flush()
 
-                    for p in element.findall('photo'): 
-                        new.photos.append(photos[p.attrib['ref']])
+                        for p in element.findall('photo'): 
+                            new.photos.append(photos[p.attrib['ref']])
+                    except:
+                        print new.title
+                        pass
 
     session.flush()
     print "... finished: %s photos in %s sets" % (len(session.query(Photo).select()),

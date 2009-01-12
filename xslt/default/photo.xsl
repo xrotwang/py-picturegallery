@@ -39,6 +39,9 @@ notes.AddNote(note);
     </p>
     <xsl:for-each select="//location">
       <h3><xsl:value-of select="$location"/>:</h3>
+      <p>
+	<a href="http://maps.google.com/?ll={@latitude},{@longitude}&amp;t=h&amp;z=13">open in Google maps</a>
+      </p>
       <div id="map" class="small"/>
       <dl>
 	<dt><xsl:value-of select="$latitude"/></dt><dd><xsl:value-of select="@latitude"/></dd>
@@ -68,13 +71,18 @@ notes.AddNote(note);
       </script>
     </xsl:for-each>
     <h3><xsl:value-of select="$tags"/>:</h3>
-    <ul>
+    <ul id="tags">
       <xsl:for-each select="//tag">
-	<li><xsl:value-of select="@raw"/></li>
+	<li>
+	  <a href="http://www.flickr.com/photos/{$user_name}/tags/{text()}/"
+	     title="see photos tagged with on flickr">
+	    <xsl:value-of select="@raw"/>
+	  </a>
+	</li>
       </xsl:for-each>
     </ul>
     <h3><xsl:value-of select="$image_sizes"/>:</h3>
-    <ul>
+    <ul id="sizes">
       <li><a href="Thumbnail.jpg" title="Thumbnail">Thumbnail</a></li>
       <li><a href="Square.jpg" title="Square">Square</a></li>
       <li><a href="Small.jpg" title="Small">Small</a></li>

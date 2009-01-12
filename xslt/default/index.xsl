@@ -7,7 +7,8 @@
 
   <xsl:template name="main_content">
     <div class="section">
-      <h2><xsl:value-of select="$sets_data/@selection"/></h2>
+      <h2><xsl:value-of select="$metadata//title"/></h2>
+      <xsl:copy-of select="$metadata//intro"/>
       <p>
 	Select one of the galleries linked from the menu in the sidebar.
       </p>

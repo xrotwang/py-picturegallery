@@ -12,7 +12,10 @@
   <xsl:param name="relPath" select="'../../'"/>
   <xsl:param name="lang" select="'en'"/>
   <xsl:param name="sets" select="''"/>
+  <xsl:param name="user_name" select="''"/>
   <xsl:param name="sets_data" select="document($sets)/sets"/>
+  <xsl:param name="metadata_file" select="'lib.xsl'"/>  
+  <xsl:variable name="metadata" select="document($metadata_file)"/>
 
   <xsl:template match="/">
     <html>

@@ -190,6 +190,11 @@ You may have to run the backup script to create it.""" % sqlite_db
         else:
             tags = [tags]
 
+        tags = [t.replace(':','') for t in tags]
+
+        if options.verbose:
+            print tags, operator
+
         related = []
 
         for p in session.query(Photo).select():
@@ -220,21 +225,23 @@ You may have to run the backup script to create it.""" % sqlite_db
         selection = 'all sets'
         for tag in session.query(Tag).select():
             related = {}
-            set = VirtualSet('v_tag_%s' % ascii(tag.name), 'Photos tagged with "%s"' % tag.raw)
+            s = VirtualSet('v_tag_%s' % ascii(tag.name), 'Photos tagged with "%s"' % tag.raw)
             for p in session.query(Photo).select():
                 if tag in p.tags:
-                    set.photos.append(p)
+                    s.photos.append(p)
                     for t in p.tags:
                         if t != tag:
                             if t.name not in related:
                                 related[t.name] = (t, 1)
                             else:
                                 related[t.name] = (t, related[t.name][1]+1)
-            set.related_tags = related
-            sets.append(set)
+            s.related_tags = related
+            sets.append(s)
         
-        for set in session.query(Set).select():
-            sets.append(set)
+        for s in session.query(Set).select():
+            sets.append(s)
+
+    sets = [s for s in sets if not s.title.startswith('favorites ')]
 
     #
     # write the selection of sets to a file to make it available for the xslt processing:
@@ -244,7 +251,12 @@ You may have to run the backup script to create it.""" % sqlite_db
         d.append(create_element('set', dict(id=s.id), s.title, et))
     tmp_sets = mktemp('.xml')
     write_tree(d, tmp_sets, implementation=et)
-    xsl_params = dict(sets=file_uri(tmp_sets), lang=options.lang)
+    xsl_params = dict(sets=file_uri(tmp_sets), 
+                      lang=options.lang,
+                      user_name=cfg.get('flickr', 'user_name'))
+    if options.metadata:
+        xsl_params['metadata_file'] = str(path.path(options.metadata).abspath())
+
 
     #
     # now copy the data:
@@ -252,27 +264,27 @@ You may have to run the backup script to create it.""" % sqlite_db
     for rscs in ['sets', 'photos', 'js', 'css', 'images']:
         existing_dir(target_dir.joinpath(rscs))
    
-    for set in sets:
+    for s in sets:
         if options.verbose:
-            print set.title
+            print s.title
 
-        for photo in set.photos:
+        for photo in s.photos:
             photo_dir = target_dir.joinpath('photos', photo.id)
             if not photo_dir.exists():
                 path.path(base_dir.joinpath('photos', photo.id)).copytree(photo_dir)
 
             _xslt(base_dir.joinpath(photo.md()), 'photo.xsl', photo_dir.joinpath('index.html'), xsl_params)
 
-        set_dir = existing_dir(target_dir.joinpath('sets', set.id))
+        set_dir = existing_dir(target_dir.joinpath('sets', s.id))
 
-        xsl_params['map'] = str([p for p in set.photos if p.latitude] != [])
+        xsl_params['map'] = str([p for p in s.photos if p.latitude] != [])
         xsl_params['base_uri'] = file_uri(base_dir)
-        _xslt(base_dir.joinpath(set.md()),  'set.xsl',  set_dir.joinpath('index.html'), xsl_params)
+        _xslt(base_dir.joinpath(s.md()),  'set.xsl',  set_dir.joinpath('index.html'), xsl_params)
 
         #
         # we have to provide a file locations.xml, too
         #
-        write_tree(locations(set), target_dir.joinpath('sets', set.id, 'locations.xml'), implementation=et)
+        write_tree(locations(s), target_dir.joinpath('sets', s.id, 'locations.xml'), implementation=et)
 
     _xslt(None, 'index.xsl', target_dir.joinpath('index.html'), xsl_params)
     os.remove(tmp_sets)
@@ -304,6 +316,7 @@ if __name__ == "__main__":
     parser.add_option("", "--debug", action="store_true", default=False)
     parser.add_option("-o", "--output", default=None)
     parser.add_option("", "--cfg", default='myflickr.cfg')
+    parser.add_option("", "--metadata", default=None)
     parser.add_option("", "--tags", default=None)
     parser.add_option("", "--sets", default=None)
     parser.add_option("", "--theme", default='default')
@@ -320,6 +333,10 @@ if __name__ == "__main__":
 
     if not src_dir.joinpath('css', options.theme, 'style.css').exists():
         parser.error("missing theme configuration")
+        sys.exit(0)        
+
+    if options.metadata and not path.path(options.metadata).exists():
+        parser.error("can't find metadata file")
         sys.exit(0)        
 
     gallery(cfg, options)

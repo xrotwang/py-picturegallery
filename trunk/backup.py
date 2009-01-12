@@ -146,9 +146,7 @@ def recreate_db(cfg, options):
     session = get_session(sqlite_db.abspath())
     
     METADATA.drop_all()
-    #session.flush()
     METADATA.create_all()
-    #session.flush()
 
     photos = {}
     tags = {}
@@ -188,7 +186,6 @@ def recreate_db(cfg, options):
                         new.longitude = float(location.get('longitude'))
                     
                     session.save(new)
-                    session.flush()
 
                     for t in element.findall('.//tag'):
                         if t.attrib['raw'] not in tags:
@@ -196,7 +193,6 @@ def recreate_db(cfg, options):
                             tag.raw = t.attrib['raw']
                             tag.name = t.text
                             session.save(tag)
-                            session.flush()
                             tags[t.attrib['raw']] = tag
                         else:
                             tag = tags[t.attrib['raw']]
@@ -217,13 +213,10 @@ def recreate_db(cfg, options):
                         note.height = 2*int(n.attrib['h'])
 
                         session.save(note)
-                        session.flush()
 
                 elif rsc_type == 'set':
                     session.save(new)
                     try:
-                        #session.flush()
-
                         for p in element.findall('photo'): 
                             new.photos.append(photos[p.attrib['ref']])
                     except:
